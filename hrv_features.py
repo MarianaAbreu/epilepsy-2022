@@ -233,7 +233,7 @@ def hrv_timedomain(rri=None, duration=None, binsize=1 / 128, show=False):
 
     if duration >= 10:
         # compute RMSSD
-        rmssd = (rri_diff ** 2).mean() ** 0.5
+        rmssd = ((rri_diff ** 2).mean()) ** 0.5
 
         args = args + (rmssd,)
         names = names + ('rmssd',)
@@ -245,7 +245,7 @@ def hrv_timedomain(rri=None, duration=None, binsize=1 / 128, show=False):
         # compute NN50 and pNN50
         nntot = len(rri_diff)
         nn50 = len(np.argwhere(abs(rri_diff) > th50))
-        pnn50 = 100 * (nn50 / nntot)
+        pnn50 = 100 * (nn50 / nntot)  # ratio of bad intervals between 0 and 1
 
         args = args + (nn50, pnn50)
         names = names + ('nn50', 'pnn50')
@@ -616,8 +616,9 @@ def compute_geometrical(rri, binsize=1 / 128, show=False):
 
 # TODO: add documentation
 def compute_fbands(frequencies, powers, method_name, show=False):
-    powers = powers / 1000. ** 2  # to ms^2/Hz
+    powers = (powers / 1000.) ** 2  # to ms^2/Hz
     total_pwr = np.sum(powers)
+    nu_band = np.argwhere((frequencies > 0.04) & (frequencies < 0.5)).reshape(-1)
 
     # ULF band
     ulf_band = np.argwhere((frequencies > 0) & (frequencies < 0.003)).reshape(-1)
@@ -633,18 +634,18 @@ def compute_fbands(frequencies, powers, method_name, show=False):
     lf_band = np.argwhere((frequencies > 0.04) & (frequencies < 0.15)).reshape(-1)
     lf_peak = frequencies[lf_band][np.argmax(powers[lf_band])]
     lf_pwr = np.sum(powers[lf_band])
-    lf_rpwr = lf_pwr / total_pwr
+    lf_rpwr = 100 * (lf_pwr / (total_pwr - vlf_pwr))  # normalised units is without vlf component
 
     # HF band
     hf_band = np.argwhere((frequencies > 0.15) & (frequencies < 0.4)).reshape(-1)
     hf_peak = frequencies[hf_band][np.argmax(powers[hf_band])]
     hf_pwr = np.sum(powers[hf_band])
-    hf_rpwr = hf_pwr / total_pwr
+    hf_rpwr = 100 * (hf_pwr / (total_pwr - vlf_pwr))
 
     # VHF band
     vhf_band = np.argwhere((frequencies > 0.4) & (frequencies <= 0.5)).reshape(-1)
     vhf_pwr = np.sum(powers[vhf_band])
-    vhf_rpwr = vhf_pwr / total_pwr
+    vhf_rpwr = 100 * (vhf_pwr / (total_pwr - vlf_pwr))
 
     # compute LF/HF ratio
     lf_hf = lf_pwr / hf_pwr
