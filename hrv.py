@@ -435,6 +435,7 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
     # ensure numpy
     rri = np.array(rri, dtype=float)
 
+
     # ensure minimal duration
     if duration is None:
         duration = np.sum(rri) / 1000.  # seconds
@@ -449,7 +450,7 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
 
         # compute frequencies and powers
         if freq_method == 'FFT':
-            frequencies, powers = welch(rri, fs=1., scaling='density')
+            frequencies, powers = welch(rri, fs=4., scaling='density')
 
         if freq_method == 'AR':
             # TODO: develop AR method

@@ -9,6 +9,8 @@ import numpy as np
 import pandas as pd
 
 # get seizures
+from scipy.signal import resample
+
 import hrv
 
 
@@ -25,7 +27,9 @@ def get_all_feats(segment):
     columns += hrv_td.keys()
     new_row = np.hstack((new_row, hrv_td))
     # frequency domain features
-    hrv_fq = hrv.hrv_frequencydomain(rri=segment)
+    segment_4hz = resample(segment, len(segment)*4)
+    hrv_fq = hrv.hrv_frequencydomain(rri=segment_4hz)
+    print(hrv_fq)
     new_row = np.hstack((new_row, hrv_fq))
     columns += hrv_fq.keys()
     # nonlinear features
@@ -123,6 +127,6 @@ rri_signal['dates'] = pd.to_datetime(rri_signal['index'])
 window = 300
 overlap = 30
 
-# get_features_good_intervals(rri_signal, type='seizure', patient=patient)
+get_features_good_intervals(rri_signal, type='seizure', patient=patient)
 
-get_features_good_intervals(rri_signal, type='baseline', patient=patient)
+# get_features_good_intervals(rri_signal, type='baseline', patient=patient)
