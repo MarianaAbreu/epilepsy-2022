@@ -390,7 +390,7 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
     duration : int, optional
         Duration of the signal (s).
     freq_method : str, optional
-        Method for spectral estimation. If 'FFT' uses Welch's method. If 'AR' 
+        Method for spectral estimation. If 'FFT' uses Welch's method. If 'AR'
         uses the autoregressive method.
     fbands : dict, optional
         Dictionary specifying the desired HRV frequency bands.
@@ -403,17 +403,17 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
         Peak frequency (Hz) of the very-low-frequency band (0.0033–0.04 Hz) in
         normal units.
     vlf_pwr : float
-        Relative power of the very-low-frequency band (0.0033–0.04 Hz) in 
+        Relative power of the very-low-frequency band (0.0033–0.04 Hz) in
         normal units.
     lf_peak : float
         Peak frequency (Hz) of the low-frequency band (0.04–0.15 Hz).
     lf_pwr : float
-        Relative power of the low-frequency band (0.04–0.15 Hz) in normal 
+        Relative power of the low-frequency band (0.04–0.15 Hz) in normal
         units.
     hf_peak : float
         Peak frequency (Hz)  of the high-frequency band (0.15–0.4 Hz).
     hf_pwr : float
-        Relative power of the high-frequency band (0.15–0.4 Hz) in normal 
+        Relative power of the high-frequency band (0.15–0.4 Hz) in normal
         units.
     lf_hf : float
         Ratio of LF-to-HF power.
@@ -435,7 +435,6 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
     # ensure numpy
     rri = np.array(rri, dtype=float)
 
-
     # ensure minimal duration
     if duration is None:
         duration = np.sum(rri) / 1000.  # seconds
@@ -446,18 +445,30 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
     # initialize outputs
     args, names = (), ()
 
+    # resampling
+    fs = 1
+    t = np.cumsum(rri)
+    t -= t[0]
+    f_inter = interp1d(t, rri, 'cubic')
+    t_inter = np.arange(t[0], t[-1], 1000. / fs)
+    rri_inter = f_inter(t_inter)
+
     if duration >= 20:
 
         # compute frequencies and powers
         if freq_method == 'FFT':
-            frequencies, powers = welch(rri, fs=4., scaling='density')
+            nperseg = 300 if len(rri_inter) > 300 else len(rri_inter)
+            frequencies, powers = welch(rri_inter, fs=fs, scaling='density', nperseg=nperseg)
 
         if freq_method == 'AR':
             # TODO: develop AR method
             print('AR method not available. Using FFT instead.')
             return hrv_frequencydomain(rri=rri, duration=duration, freq_method='FFT')
 
-        powers = powers / 1000. ** 2  # to ms^2/Hz
+        if freq_method == 'Lomb':
+            # TODO: develop Lomb-Scargle method
+            print('Lomb-Scargle method not available. Using FFT instead.')
+            return hrv_frequencydomain(rri=rri, duration=duration, freq_method='FFT')
 
         # compute frequency bands
         fb_out = compute_fbands(frequencies=frequencies, powers=powers, method_name=freq_method, show=False)
@@ -474,14 +485,6 @@ def hrv_frequencydomain(rri=None, duration=None, freq_method='FFT', fbands=None,
         # plot
         if show:
             plot_fbands(frequencies, powers, fbands, freq_method, LF_HF=lf_hf)
-
-    # if duration >= 270:
-    #     args = args + (fb_out['vlf_pwr'],)
-    #     names = names + ('vlf_pwr',)
-    #
-    # if duration >= 86400:
-    #     args = args + (fb_out['ulf_pwr'],)
-    #     names = names + ('ulf_pwr',)
 
     return utils.ReturnTuple(args, names)
 
@@ -813,24 +816,31 @@ def compute_fbands(frequencies, powers, method_name, fbands=None, show=False):
     # initialize outputs
     args = tuple()
     names = tuple()
-    band_nu = np.argwhere((frequencies > 0.04) & (frequencies < 0.5)).reshape(-1)
-    total_pwr = np.sum(powers[band_nu])
+
+    df = frequencies[1] - frequencies[0]  # frequency resolution
+    total_pwr = np.sum(powers) * df
 
     if fbands is None:
         fbands = FBANDS
 
     # compute power, peak and relative power for each frequency band
-    for fband in fbands.keys():
-        band = np.argwhere((frequencies > fbands[fband][0]) & (frequencies < fbands[fband][-1])).reshape(-1)
+    for fband in ['ulf', 'vlf', 'lf', 'hf', 'vhf']:  # fbands.keys():
+        band = np.argwhere((frequencies >= fbands[fband][0]) & (frequencies <= fbands[fband][-1])).reshape(-1)
         # check if it's possible to compute the frequency band
         if len(band) == 0:
             continue
-        pwr = np.sum(powers[band])
+        pwr = np.sum(powers[band]) * df
+        if fband == 'vlf':
+            vlf_pwr = float(pwr)
         peak = frequencies[band][np.argmax(powers[band])]
-        rpwr = 100 * (pwr / total_pwr)
+        rpwr = pwr / total_pwr
 
         args += (pwr, peak, rpwr)
         names += (fband + '_pwr', fband + '_peak', fband + '_rpwr')
+        if fband in ['lf', 'hf']:
+            nupwr = pwr / (total_pwr - vlf_pwr)
+            args += (nupwr,)
+            names += (fband + 'nupwr',)
 
     if show:
         plot_fbands(frequencies=frequencies,
@@ -839,6 +849,7 @@ def compute_fbands(frequencies, powers, method_name, fbands=None, show=False):
                     method_name=method_name)
 
     return utils.ReturnTuple(args, names)
+
 
 
 def plot_fbands(frequencies, powers, fbands=None, method_name=None, yscale='linear', **legends):
