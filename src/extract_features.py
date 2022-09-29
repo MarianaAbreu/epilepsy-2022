@@ -11,7 +11,6 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 
 # get seizures
-from scipy.signal import resample
 
 import hrv
 
@@ -71,11 +70,13 @@ def get_baseline_df(rri_signal, seizure_dates):
     :param rri_signal: dataframe of rri values
     :return: rri signal
     """
+    i = 0
     baseline_df = pd.DataFrame()
     for sd in seizure_dates:
         next_df = rri_signal.loc[~rri_signal['dates'].between(sd-timedelta(hours=2), sd + timedelta(hours=1))]
-        next_df['id'] = np.ones(len(next_df)) * 0
+        next_df['id'] = np.ones(len(next_df)) * i
         baseline_df = pd.concat((baseline_df, next_df), ignore_index=True)
+        i += 1
 
     baseline_df = baseline_df.drop_duplicates()
     return baseline_df
@@ -153,10 +154,10 @@ for patient_num in ['312', '326', '391', '365', '358', '352', '386', '400', '413
             get_features_good_intervals(rri_signal, type='seizure', patient=patient)
         except Exception as e:
             print(e)
-    if not os.path.isfile(f'data\\features_{patient}_baseline.parquet'):
-        try:
-            get_features_good_intervals(rri_signal, type='baseline', patient=patient)
-        except Exception as e:
-            print(e)
+    # if not os.path.isfile(f'data\\features_{patient}_baseline.parquet'):
+    try:
+        get_features_good_intervals(rri_signal, type='baseline', patient=patient)
+    except Exception as e:
+        print(e)
 
     print(f'Time to process ... {time.time()-time_start}')
