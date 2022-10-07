@@ -33,15 +33,18 @@ def clean_segment(segment, list_features):
         ynew = f(xnew)
         clean_segment[feat] = ynew
     clean_segment['label'] = segment['label'].iloc[0]
-    clean_segment['time2sz'] = xnew - xnew[-1]
+    clean_segment['time2end'] = xnew - xnew[-1]
+    clean_segment['t0'] = clean_segment['time2end'].astype('timedelta64[s]') + (segment['t0'].iloc[-1])
 
     return clean_segment
 
 
-def clean_features(patient, type='seizure'):
+def clean_features(patient, save_dir, type='seizure'):
     # select patient features
-    file = pd.read_parquet(os.path.join('C:\\Users\\Mariana', 'PycharmProjects', 'MapME', 'data',
-                           f'features_p{patient}_{type}.parquet'))
+    if not patient.startswith('p'):
+        patient = 'p' + patient
+    file = pd.read_parquet(os.path.join(save_dir,
+                           f'features_{patient}_{type}.parquet'))
     # separate into segments
     if type == 'seizure':
         list_labels = sorted(set(file['label']))
@@ -62,10 +65,11 @@ def clean_features(patient, type='seizure'):
         clean_file = pd.concat((clean_file, clean_seg), ignore_index=True)
         i += 1
     clean_file = clean_file.drop_duplicates()
-    clean_file.to_parquet(os.path.join('C:\\Users\\Mariana', 'PycharmProjects', 'MapME', 'data',
-                                       f'clean_features_p{patient}_{type}.parquet'))
+    clean_file.to_parquet(os.path.join(save_dir,
+                                       f'clean_features_{patient}_{type}.parquet'))
     # convert time to time until seizure
 
-
-for patient in ['400', '413', '386', '365', '312', '326', '352', '358']:
-    clean_features(patient, type='baseline')
+## example
+#save_dir = '..\\data'
+#for patient in ['413']:  # ['400', '413', '386', '365', '312', '326', '352', '358']:
+#    clean_features(patient, save_dir, type='baseline')

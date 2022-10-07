@@ -6,10 +6,11 @@ import numpy as np
 import pandas as pd
 
 
-def create_dataset(str_files = '', list_features = []):
+def create_dataset(path_to_files='..\data', str_files='', list_features=[]):
     """
     Create a dataset of X and y based on str files. X and y are dict of arrays, and each patient is one
     entry of the dict
+    :param path_to_files:
     :param str_files:
     :return:
     """
@@ -19,16 +20,17 @@ def create_dataset(str_files = '', list_features = []):
                  'vhf_rpwr', 'lf_hf', 's', 'sd1', 'sd2', 'sd12', 'sd21', 'hrmin', 'hrmax', 'hrminmax', 'hravg']
     # list of statistical features calculated for each hrv feature
     stats_feats = ['min', 'minmax', 'deriv', 'trend_ratio', 'trend_diff', 'skewness']
-    file_names = [file for file in os.listdir('..\data') if str_files in file]
+    file_names = [file for file in os.listdir(path_to_files) if str_files in file]
     X = {}
     y = {}
 
     for file in file_names:
         patient = file.split('_')[2]
-        data = pd.read_parquet(os.path.join('..\data', file))
+        data = pd.read_parquet(os.path.join(path_to_files, file))
+
         labels = sorted(set(data['label']))
         all_feats_names = [hrv_feat + '-' + col for col in data.columns if col not in ['label', 'len', 'feature']
-                     for hrv_feat in hrv_feats]
+                           for hrv_feat in hrv_feats]
 
         table_all_feats = pd.DataFrame()
 
@@ -56,5 +58,4 @@ def create_dataset(str_files = '', list_features = []):
 
     return X, y, feats_included
 
-
-# X, y, feats_included = create_dataset('level2_features', list_features=list_features)
+# X, y, feats_included = create_dataset('level2_features')
