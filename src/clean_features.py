@@ -70,6 +70,6 @@ def clean_features(patient, save_dir, type='seizure'):
     # convert time to time until seizure
 
 ## example
-#save_dir = '..\\data'
-#for patient in ['413']:  # ['400', '413', '386', '365', '312', '326', '352', '358']:
-#    clean_features(patient, save_dir, type='baseline')
+save_dir = '..\\data'
+for patient in ['413']:  # ['400', '413', '386', '365', '312', '326', '352', '358']:
+    clean_features(patient, save_dir, type='baseline')

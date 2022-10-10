@@ -12,8 +12,7 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 
 
-
-from src import hrv2, hrv, extract_rri
+from src import hrv2, extract_rri
 
 
 def get_hrv_feats(segment):
@@ -23,36 +22,6 @@ def get_hrv_feats(segment):
     hrv_features = [feat for feat in hrv_feats.keys() if feat not in ['hr', 'rri']]
     new_row = pd.DataFrame(dict(zip(hrv_feats.keys(), hrv_feats)))[hrv_features].iloc[0]
     columns += hrv_features
-
-    return dict(zip(columns, new_row.T))
-
-
-def get_all_feats(segment):
-    """Calculate all features based on RR intervals
-
-    :param segment:
-    :return:
-    """
-    new_row = np.array([])
-    columns = []
-    # time domain features
-    hrv_td = hrv.hrv_timedomain(rri=segment)
-    columns += hrv_td.keys()
-    new_row = np.hstack((new_row, hrv_td))
-    # frequency domain features
-    # segment_1hz = resample(segment, len(segment)*1)
-    hrv_fq = hrv.hrv_frequencydomain(rri=segment)
-    new_row = np.hstack((new_row, hrv_fq))
-    columns += hrv_fq.keys()
-    # nonlinear features
-    hrv_nl = hrv.hrv_nonlinear(rri=segment)
-    new_row = np.hstack((new_row, hrv_nl))
-    columns += hrv_nl.keys()
-    # heart rate features
-    hr = (60 * segment) / 1000
-    hrv_metrics = hrv.hr_metrics(hr)
-    new_row = np.hstack((new_row, hrv_metrics))
-    columns += hrv_metrics.keys()
 
     return dict(zip(columns, new_row.T))
 
