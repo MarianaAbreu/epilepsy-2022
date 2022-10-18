@@ -12,7 +12,8 @@ import pandas as pd
 pd.options.mode.chained_assignment = None
 
 
-from src import hrv2, extract_rri
+from src import extract_rri
+from src.BioSPPy.biosppy.signals import hrv as hrv2
 
 
 def get_hrv_feats(segment):
@@ -96,6 +97,7 @@ def get_features_good_intervals(rri_signal, type='baseline', patient='', seizure
         i += 1
     feats_df.to_parquet(os.path.join(save_dir, 'features_'+patient+'_'+type+'.parquet'))
 
+"""
 # example
 
 for patient_num in ['413', '400', '352', '358', '365', '326', '386', '391', '312']:
@@ -133,4 +135,4 @@ for patient_num in ['413', '400', '352', '358', '365', '326', '386', '391', '312
         continue
 
     print(f'Time to process ... {time.time()-time_start}')
-
+"""

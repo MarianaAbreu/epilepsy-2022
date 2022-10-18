@@ -23,9 +23,9 @@ from scipy.interpolate import interp1d
 from scipy.signal import welch
 
 # local
-from biosppy import utils
-from biosppy import plotting
-from biosppy.signals import tools
+from BioSPPy.biosppy import utils
+from BioSPPy.biosppy import plotting
+from BioSPPy.biosppy.signals import tools
 
 # Global variables
 FBANDS = {'ulf': [0, 0.003],

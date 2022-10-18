@@ -4,6 +4,7 @@
 # Last update: 27-09-2022
 
 import os
+from datetime import timedelta
 
 import biosppy as bp
 import numpy as np
@@ -46,22 +47,23 @@ def clean_features(patient, save_dir, type='seizure'):
     file = pd.read_parquet(os.path.join(save_dir,
                            f'features_{patient}_{type}.parquet'))
     # separate into segments
-    if type == 'seizure':
-        list_labels = sorted(set(file['label']))
-        segments = [file.loc[file['label'] == label] for label in list_labels]
-    else:
-        range_time = file['t0'].iloc[::120]
-        segments = [file.loc[file['t0'].between(range_time.iloc[i], range_time.iloc[i+1])] for i in range(len(range_time)-1)]
+    jumps = file['t0'].diff() != timedelta(seconds=30)
+    jumps.iloc[-1] = True
+    range_time = file.loc[jumps]['t0']
 
+    segments_ = [file.loc[file['t0'].between(time_step, time_step + timedelta(minutes=65))] for i in range(len(range_time)-1)
+                 for time_step in pd.date_range(range_time.iloc[i], range_time.iloc[i+1], freq='1H')]
+    segments = [seg for seg in segments_ if len(seg) >= 100]
     list_features = [feat for feat in file.columns if feat not in ['ulf_peak', 'ulf_pwr', 'ulf_rpwr', 'label', 't0',
-                                                                   't1', 'dfa_a1', 'dfa_a2', 'sampen', 'd2']]
+                                                                   't1']]
+    print(f'{patient} has {len(segments)} {type} segments')
     # clean one feature
     i = 0
     clean_file = pd.DataFrame()
     for segment in segments:
         clean_seg = clean_segment(segment, list_features)
         if type == 'baseline':
-            clean_seg['label'] = ['baseline' + str(i)] * len(clean_seg)
+            clean_seg['label'] = ['baseline ' + str(i)] * len(clean_seg)
         clean_file = pd.concat((clean_file, clean_seg), ignore_index=True)
         i += 1
     clean_file = clean_file.drop_duplicates()
@@ -70,6 +72,7 @@ def clean_features(patient, save_dir, type='seizure'):
     # convert time to time until seizure
 
 ## example
-save_dir = '..\\data'
-for patient in ['413']:  # ['400', '413', '386', '365', '312', '326', '352', '358']:
-    clean_features(patient, save_dir, type='baseline')
+#save_dir = 'C:\\Users\\Mariana\\OneDrive - Universidade de Lisboa\\G5\\data'
+#for patient in ['400', '413', '386', '365', '312', '326', '358', '391']:
+#    clean_features(patient, save_dir, type='baseline')
+#    clean_features(patient, save_dir, type='seizure')

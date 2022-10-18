@@ -15,11 +15,41 @@ def create_dataset(path_to_files='..\data', str_files='', list_features=[]):
     :return:
     """
     # list of hrv features
-    hrv_feats = ['meanrr', 'rmssd', 'nn50', 'pnn50', 'sdnn', 'hti', 'tinn', 'vlf_pwr', 'vlf_peak', 'vlf_rpwr', 'lf_pwr',
-                 'lf_peak', 'lf_rpwr', 'lfnupwr', 'hf_pwr', 'hf_peak', 'hf_rpwr', 'hfnupwr', 'vhf_pwr', 'vhf_peak',
-                 'vhf_rpwr', 'lf_hf', 's', 'sd1', 'sd2', 'sd12', 'sd21', 'hrmin', 'hrmax', 'hrminmax', 'hravg']
+    hrv_feats = ['hr_min',
+                 'hr_max',
+                 'hr_minmax',
+                 'hr_avg',
+                 'hr_med',
+                 'rr_mean',
+                 'rmssd',
+                 'nn50',
+                 'pnn50',
+                 'sdnn',
+                 'hti',
+                 'tinn',
+                 'ulf_pwr',
+                 'ulf_peak',
+                 'ulf_rpwr',
+                 'vlf_pwr',
+                 'vlf_peak',
+                 'vlf_rpwr',
+                 'lf_pwr',
+                 'lf_peak',
+                 'lf_rpwr',
+                 'hf_pwr',
+                 'hf_peak',
+                 'hf_rpwr',
+                 'vhf_pwr',
+                 'vhf_peak',
+                 'vhf_rpwr',
+                 'lf_hf',
+                 's',
+                 'sd1',
+                 'sd2',
+                 'sd12',
+                 'sd21']
     # list of statistical features calculated for each hrv feature
-    stats_feats = ['min', 'minmax', 'deriv', 'trend_ratio', 'trend_diff', 'skewness']
+    stats_feats = ['minmax', 'deriv', 'trend_ratio', 'trend_diff', 'skewness']
     file_names = [file for file in os.listdir(path_to_files) if str_files in file]
     X = {}
     y = {}
@@ -41,7 +71,6 @@ def create_dataset(path_to_files='..\data', str_files='', list_features=[]):
             table_all_feats = pd.concat((table_all_feats, pd.DataFrame([one_segment_feats], columns=all_feats_names)),
                                         ignore_index=True)
 
-            # feat_list =
         feats_included = list_features if list_features != [] else all_feats_names
         table_feats_included = table_all_feats[feats_included]
         if 'baseline' in labels[0]:
